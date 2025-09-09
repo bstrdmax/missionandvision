@@ -1,85 +1,35 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessInfo, GeneratedContentData } from "../types";
 
-// Use Vite's standard import.meta.env for client-side environment variables.
-// Your API key must be stored in a Netlify environment variable named VITE_API_KEY.
-const apiKey = import.meta.env.VITE_API_KEY;
-
-if (!apiKey) {
-  // Provide a clear error message if the API key is missing.
-  throw new Error("VITE_API_KEY is not defined. Please set this environment variable in your Netlify deployment settings.");
-}
-
-const ai = new GoogleGenAI({ apiKey });
-
-const responseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    missionStatement: {
-      type: Type.STRING,
-      description: "A concise and inspiring mission statement for the business, written as a single sentence.",
-    },
-    coreValues: {
-      type: Type.ARRAY,
-      description: "A list of 3-5 core values for the business.",
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          value: {
-            type: Type.STRING,
-            description: "The name of the core value (e.g., 'Innovation', 'Integrity').",
-          },
-          description: {
-            type: Type.STRING,
-            description: "A brief one-sentence explanation of what the core value means for the company in practice.",
-          },
-        },
-        required: ["value", "description"],
-      },
-    },
-  },
-  required: ["missionStatement", "coreValues"],
-};
-
 export async function generateMissionAndValues(businessInfo: BusinessInfo): Promise<GeneratedContentData> {
-  const prompt = `
-    Based on the following business details, please generate a mission statement and a set of 3-5 core values.
-
-    Company Name: ${businessInfo.name}
-    Industry: ${businessInfo.industry}
-    Target Audience: ${businessInfo.audience}
-    Key Products/Services: ${businessInfo.services}
-    What makes the company unique: ${businessInfo.usp}
-    Desired Company Culture (adjectives): ${businessInfo.culture}
-
-    The mission statement should be a single, concise, and inspiring sentence that captures the company's purpose, avoiding corporate jargon.
-    Each core value should be a short phrase (1-3 words) followed by a brief one-sentence explanation of what it means for the company.
-    Return the output in the specified JSON format.
-  `;
-
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-        temperature: 0.7,
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(businessInfo),
     });
 
-    const jsonText = response.text.trim();
-    const parsedData: GeneratedContentData = JSON.parse(jsonText);
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      // Use the error message from the serverless function, or a default
+      throw new Error(responseData.error || `Request failed with status: ${response.status}`);
+    }
+
+    const parsedData: GeneratedContentData = responseData;
     
-    // Basic validation
+    // Basic validation on the received data
     if (!parsedData.missionStatement || !Array.isArray(parsedData.coreValues)) {
-        throw new Error("Invalid data structure received from API.");
+        throw new Error("Invalid data structure received from the server.");
     }
     
     return parsedData;
 
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to generate content from AI. The model may be unavailable or the request could not be processed.");
+    console.error("Error calling backend function:", error);
+    // Re-throw a user-friendly error for the UI to catch
+    const message = error instanceof Error ? error.message : "An unknown error occurred.";
+    throw new Error(`Failed to generate content: ${message}`);
   }
 }
