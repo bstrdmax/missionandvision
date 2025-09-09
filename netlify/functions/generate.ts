@@ -5,7 +5,7 @@ import type { BusinessInfo, GeneratedContentData } from '../../src/types';
 // It uses a basic object type to avoid needing extra dependencies.
 export const handler = async (event: { httpMethod: string, body: string | null }) => {
   // Ensure the API key is set in your Netlify build environment variables
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.VITE_API_KEY;
   if (!apiKey) {
     console.error("API_KEY environment variable is not set.");
     return {
