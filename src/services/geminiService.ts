@@ -1,8 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessInfo, GeneratedContentData } from "../types";
 
-// FIX: Initialize GoogleGenAI with API key from process.env as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Use Vite's standard import.meta.env for client-side environment variables.
+// Your API key must be stored in a Netlify environment variable named VITE_API_KEY.
+const apiKey = import.meta.env.VITE_API_KEY;
+
+if (!apiKey) {
+  // Provide a clear error message if the API key is missing.
+  throw new Error("VITE_API_KEY is not defined. Please set this environment variable in your Netlify deployment settings.");
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -72,7 +80,6 @@ export async function generateMissionAndValues(businessInfo: BusinessInfo): Prom
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    // FIX: Corrected typo 'new new Error' to 'new Error'.
     throw new Error("Failed to generate content from AI. The model may be unavailable or the request could not be processed.");
   }
 }
