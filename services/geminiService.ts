@@ -2,7 +2,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessInfo, GeneratedContentData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+const apiKey = import.meta.env.VITE_API_KEY;
+
+if (!apiKey) {
+  throw new Error("VITE_API_KEY is not defined. Please set it in your environment variables. It must be prefixed with VITE_");
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 const responseSchema = {
   type: Type.OBJECT,
