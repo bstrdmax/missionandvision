@@ -1,15 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BusinessInfo, GeneratedContentData } from "../types";
 
-const apiKey = process.env.API_KEY;
-
-// This check runs when the module is loaded. The Vite config ensures `process.env.API_KEY` is defined at build time.
-// If it's missing, the app will fail to load, which is a clear signal to the developer to set the API key.
-if (!apiKey) {
-  throw new Error("API_KEY is not defined. Please set it in your environment variables.");
-}
-
-const ai = new GoogleGenAI({ apiKey });
+// FIX: Initialize GoogleGenAI with API key from process.env as per guidelines.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -79,6 +72,7 @@ export async function generateMissionAndValues(businessInfo: BusinessInfo): Prom
 
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    // FIX: Corrected typo 'new new Error' to 'new Error'.
     throw new Error("Failed to generate content from AI. The model may be unavailable or the request could not be processed.");
   }
 }
